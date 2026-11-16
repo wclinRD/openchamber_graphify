@@ -132,8 +132,8 @@ function createSection(id: string, title: string): HTMLElement {
 const networkMap = new Map<string, any>();
 
 let graphScale = 1;
-const ZOOM_IN_FACTOR = 1.25;
-const ZOOM_OUT_FACTOR = 0.8;
+const ZOOM_IN_FACTOR = 1.35;
+const ZOOM_OUT_FACTOR = 0.74;
 
 async function fetchGraphData(): Promise<GraphData> {
   const r = await host.serviceRequest!({ method: 'GET', path: '/graph/data', query: { directory } });
@@ -381,10 +381,10 @@ async function drawGraph(data: GraphData): Promise<void> {
           // Use existing local if available, else relative factor from graphScale.
           case 'in':
             if (graphScaleLocal) applyFit(Math.min(4, graphScaleLocal * ZOOM_IN_FACTOR));
-            else applyFit((graphScale * ZOOM_IN_FACTOR) % graphScale); break;
+            else applyFit(Math.min(4, graphScale * ZOOM_IN_FACTOR)); break;
           case 'out':
             if (graphScaleLocal) applyFit(Math.max(0.25, graphScaleLocal * ZOOM_OUT_FACTOR));
-            else applyFit((graphScale * ZOOM_OUT_FACTOR) % graphScale); break;
+            else applyFit(Math.max(0.25, graphScale * ZOOM_OUT_FACTOR)); break;
           case 'setpct': runSetPct(); break;
         }
       };
