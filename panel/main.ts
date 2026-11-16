@@ -305,7 +305,11 @@ async function drawGraph(data: GraphData): Promise<void> {
           labelEl.addEventListener('click', () => { checkInput.checked = !checkInput.checked; toggleGroup(); });
         }
 
-        body.insertBefore(legendDiv, graphDiv);
+        if (graphDiv && graphDiv.parentNode === body) {
+          body.insertBefore(legendDiv, graphDiv);
+        } else if (body && !body.contains(legendDiv)) {
+          body.appendChild(legendDiv);
+        }
       }
 
       buildLegend();
