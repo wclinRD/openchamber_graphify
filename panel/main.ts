@@ -175,7 +175,10 @@ async function drawGraph(data: GraphData): Promise<void> {
     controls.appendChild(btn);
   }
 
- // Replace with compact zoom controls: [−] [zoom input] [+]
+ // Keep Default plus compact zoom controls: [Default] [−] [% input] [+]
+  makeButton('Default', 'reset');
+
+  // Zoom controls: [−] [%?] [+]
   makeButton('−', 'out');
 
   const labelSpan = document.createElement('span');
@@ -189,6 +192,7 @@ async function drawGraph(data: GraphData): Promise<void> {
   inputZoom.step = '10';
   inputZoom.min = '25';
   inputZoom.max = '400';
+  inputZoom.placeholder = '100%';
 
   controls.appendChild(inputZoom);
   makeButton('+', 'in');
