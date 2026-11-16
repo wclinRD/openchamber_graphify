@@ -52,6 +52,11 @@ const CSS = `
   @keyframes spin { to { transform: rotate(360deg); } }
 `;
 
+function communityColor(cId: number): string {
+  const palette = ['#4E79A7', '#F28E2B', '#E15759', '#76B7B2', '#59A14F', '#EDC948', '#B07AA1'];
+  return palette[cId % palette.length];
+}
+
 let activeTab = 'graph';
 
 const tabsData = [
@@ -219,7 +224,6 @@ async function drawGraph(data: GraphData): Promise<void> {
 
       // Group legend and visibility filtering.
       let legendDiv: HTMLElement | null = null;
-      const HUE_MAP: Record<number, string> = { 0:'4E79A7',1:'F28E2B',2:'E15759',3:'76B7B2',4:'59A14F',5:'EDC948',6:'B07AA1' };
       type GroupInfo = { id: number; name: string };
       const communityGroups: Map<number, GroupInfo> = new Map();
 
@@ -234,7 +238,7 @@ async function drawGraph(data: GraphData): Promise<void> {
 
       const selectedGroups = new Set<number>([...communityGroups.keys()]);
 
-      function colorDot(cid: number): string { return '#' + (HUE_MAP[cid] || '888888'); }
+      function colorDot(cid: number): string { return communityColor(cid); }
 
       function filterNetwork(): void {
         const visibleNodeIds = new Set<string>();
@@ -535,11 +539,7 @@ function renderAnalysis(analysis: any): void {
     const row = document.createElement('tr');
     const td1 = document.createElement('td');
 
-    // Color from graphify-out legend mapping
-    const hueMap: Record<string, string> = {'0':'4E79A7','1':'F28E2B','2':'E15759','3':'76B7B2','4':'59A14F','5':'EDC948','6':'B07AA1'};
-    const color = hueMap[cid] || '888';
-
-    td1.innerHTML = `<span class="badge-dot" style="background:#${color}"></span>C${cid}`;
+    td1.innerHTML = `<span class="badge-dot" style="background:${communityColor(Number(cid))}"></span>C${cid}`;
     const td2 = document.createElement('td');
     const coh = cohesion[cid];
     td2.textContent = coh !== undefined ? coh.toFixed(2) : '-';
