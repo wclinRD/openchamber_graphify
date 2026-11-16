@@ -1,0 +1,174 @@
+{
+  "communities": {
+    "0": [
+      "tsconfig",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_allowimportingtsextensions",
+      "tsconfig_compileroptions_allowsyntheticdefaultimports",
+      "tsconfig_compileroptions_esmoduleinterop",
+      "tsconfig_compileroptions_forceconsistentcasinginfilenames",
+      "tsconfig_compileroptions_isolatedmodules",
+      "tsconfig_compileroptions_lib",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_moduleresolution",
+      "tsconfig_compileroptions_noemit",
+      "tsconfig_compileroptions_nouncheckedindexedaccess",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_strict",
+      "tsconfig_compileroptions_target",
+      "tsconfig_compileroptions_types",
+      "tsconfig_exclude",
+      "tsconfig_include"
+    ],
+    "1": [
+      "package",
+      "package_description",
+      "package_devdependencies",
+      "package_devdependencies_openchamber_sdk",
+      "package_devdependencies_types_node",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_typecheck",
+      "package_type",
+      "package_version",
+      "ref_openchamber_sdk",
+      "ref_types_node"
+    ],
+    "2": [
+      "ref_node_fs",
+      "ref_node_http",
+      "ref_node_path",
+      "scripts_build",
+      "scripts_build_pkgroot",
+      "scripts_build_targets",
+      "service_main_js_service_main",
+      "service_main_js_service_main_sendjson",
+      "service_main_port",
+      "service_main_server",
+      "service_main_ts_service_main",
+      "service_main_ts_service_main_sendjson"
+    ],
+    "3": [
+      "package_contributes_service",
+      "package_openchamber",
+      "package_openchamber_apiversion",
+      "package_openchamber_contributes",
+      "package_openchamber_icon",
+      "package_openchamber_id",
+      "package_openchamber_name",
+      "package_service_entry",
+      "package_service_runtime"
+    ],
+    "4": [
+      "status_main_c",
+      "status_main_c_constructor",
+      "status_main_eo",
+      "status_main_fo",
+      "status_main_ht",
+      "status_main_js_status_main",
+      "status_main_pr",
+      "status_main_size"
+    ],
+    "5": [
+      "package_contributes_statussection",
+      "package_statussection_defaultexpanded",
+      "package_statussection_entry",
+      "package_statussection_height",
+      "package_statussection_requiresproject",
+      "package_statussection_title"
+    ],
+    "6": [
+      "status_main_host",
+      "status_main_rendergraph",
+      "status_main_rendernote",
+      "status_main_tryload",
+      "status_main_ts_status_main"
+    ]
+  },
+  "cohesion": {
+    "0": 0.1111111111111111,
+    "1": 0.16483516483516483,
+    "2": 0.22727272727272727,
+    "3": 0.2222222222222222,
+    "4": 0.32142857142857145,
+    "5": 0.3333333333333333,
+    "6": 0.6
+  },
+  "gods": [
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 15
+    },
+    {
+      "id": "package_openchamber",
+      "label": "openchamber",
+      "degree": 6
+    },
+    {
+      "id": "package_contributes_statussection",
+      "label": "statusSection",
+      "degree": 6
+    },
+    {
+      "id": "status_main_fo",
+      "label": "Fo()",
+      "degree": 3
+    },
+    {
+      "id": "status_main_tryload",
+      "label": "tryLoad()",
+      "degree": 3
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "degree": 3
+    },
+    {
+      "id": "ref_openchamber_sdk",
+      "label": "@openchamber/sdk",
+      "degree": 3
+    },
+    {
+      "id": "package_contributes_service",
+      "label": "service",
+      "degree": 3
+    },
+    {
+      "id": "package_openchamber_contributes",
+      "label": "contributes",
+      "degree": 3
+    },
+    {
+      "id": "status_main_c",
+      "label": "c",
+      "degree": 2
+    }
+  ],
+  "surprises": [],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `openchamber` connect `Extension Manifest` to `Package Dependencies`?",
+      "why": "High betweenness centrality (0.126) - this node is a cross-community bridge."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `TypeScript Configuration` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.1111111111111111 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `contributes` connect `Extension Manifest` to `UI Component Configuration`?",
+      "why": "High betweenness centrality (0.094) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `@openchamber/sdk` connect `Package Dependencies` to `Graph Rendering Logic`?",
+      "why": "High betweenness centrality (0.061) - this node is a cross-community bridge."
+    }
+  ]
+}
