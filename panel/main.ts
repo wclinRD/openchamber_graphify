@@ -17,7 +17,7 @@ const CSS = `
   .tab:hover:not(.active) { background-color:color-mix(in srgb, var(--primary) 6%, transparent); color:var(--oc-fg); }
   .tab.active { background-color: color-mix(in srgb, var(--oc-fg) 8%, transparent) !important; color:var(--oc-fg)!important; font-weight:600; }
   .content { flex: 1; display: none; overflow: hidden; height: 0; }
-  .content.active { display: flex; flex-direction: column; height: auto; overflow: hidden; }
+  .content.active { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .section-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; color: var(--oc-muted); border-bottom: 1px solid var(--oc-border); }
   .section-body { padding: 0; overflow-y: auto; flex: 1; }
   .graph-controls { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: color-mix(in srgb, var(--oc-fg) 3%, transparent); border-bottom: 1px solid var(--oc-border); flex-shrink:0; }
