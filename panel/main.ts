@@ -294,15 +294,15 @@ async function drawGraph(data: GraphData): Promise<void> {
 
           legendDiv?.appendChild(labelEl);
 
-          checkInput.addEventListener('change', (e) => {
-            const cb = e.currentTarget as HTMLInputElement;
-            if (!labelEl) return;
+          const toggleGroup = () => {
+            checkInput.checked = !checkInput.checked;
             const cid = Number((labelEl as any).dataset.cid);
-            if (cb.checked) selectedGroups.add(cid); else selectedGroups.delete(cid);
+            if (checkInput.checked) selectedGroups.add(cid); else selectedGroups.delete(cid);
             filterNetwork();
-          });
+          };
 
-          labelEl.addEventListener('click', () => { checkInput.checked = !checkInput.checked; checkInput.dispatchEvent(new Event('change')); });
+          checkInput.addEventListener('change', toggleGroup);
+          labelEl.addEventListener('click', () => { checkInput.checked = !checkInput.checked; toggleGroup(); });
         }
 
         body.insertBefore(legendDiv, graphDiv);
