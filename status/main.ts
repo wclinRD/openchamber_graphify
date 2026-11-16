@@ -71,12 +71,31 @@ function drawGraph(nodes: any[], edges: any[]): void {
           forceAtlas2Based: { gravitationalConstant: -60, centralGravity: 0.005, springLength: 120, springConstant: 0.08, damping: 0.4, avoidOverlap: 0.8 },
           stabilization: { iterations: 200, fit: true }
         },
-        interaction: { hover: true, tooltipDelay: 100, hideEdgesOnDrag: true },
+        interaction: {
+          hover: true,
+          tooltipDelay: 100,
+          hideEdgesOnDrag: true,
+          navigationButtons: false,
+          keyboard: false,
+        },
         nodes: { shape: 'dot', borderWidth: 1.5 },
         edges: { smooth: { type: 'continuous', roundness: 0.2 }, selectionWidth: 3 }
       };
 
-      const networkData = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+      // Match graphify-out/graph.html seed positions (#3699) to avoid cluster-collapse.
+      const nodesDS = new vis.DataSet(nodes.map((node, i) => ({
+        ...node,
+        x: 30 * Math.sqrt(i) * Math.cos((i + 1) * 2.4),
+        y: 30 * Math.sqrt(i + 1) * Math.sin((i + 1) * 2.4),
+      })));
+
+      const edgesDS = new vis.DataSet(edges.map((edge, i) => ({
+        id: i, from: edge.from, to: edge.to, label: '', title: edge.title ?? '',
+        dashes: edge.dashes, width: edge.width, color: edge.color,
+        arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+      })));
+
+      const networkData = { nodes: nodesDS, edges: edgesDS };
       const network = new vis.Network(netEl, networkData, networkOptions);
 
       network.once('stabilizationIterationsDone', () => {
