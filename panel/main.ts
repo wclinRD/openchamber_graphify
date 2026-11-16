@@ -161,7 +161,13 @@ async function drawGraph(data: GraphData): Promise<void> {
   inputZoom.min = '25';
   inputZoom.max = '400';
   inputZoom.placeholder = '100%';
+
+  const goButton = document.createElement('button');
+  goButton.textContent = 'Go';
+  goButton.dataset.action = 'setpct';
+
   controls.appendChild(inputZoom);
+  controls.appendChild(goButton);
 
   body.appendChild(controls);
 
