@@ -278,7 +278,10 @@ async function drawGraph(data: GraphData): Promise<void> {
 
         const filteredEdges = netEdges.filter(e => selectedEdgeIds.has(String((e as any).id)));
 
-        try { network.update({ nodes: filteredNodes.map(n => ({ id: String(n.id), hidden: !visibleNodeIds.has(String(n.id)) })), edges: filteredEdges.map(e => ({ id: String((e as any).id), hidden: !visibleNodeIds.has(String(e.from)) || !visibleNodeIds.has(String(e.to)) })) }); } catch {}
+        try { 
+          (network as any).body.data.nodes.update(netNodes.map(n => ({ id: String(n.id), hidden:!visibleNodeIds.has(String(n.id)) })));
+          (network as any).body.data.edges.update(netEdges.map(e => ({ id: String((e as any).id), hidden:!visibleNodeIds.has(String(e.from)) || !visibleNodeIds.has(String(e.to)) })));
+        } catch {}
 
         const oldTitle = legendDiv?.querySelector<HTMLElement>('.legend-title');
         if (communityGroups.size === 0) { oldTitle?.replaceChildren(new Text('No groups available')); }
