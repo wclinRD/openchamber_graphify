@@ -23,6 +23,8 @@ const CSS = `
   .graph-controls { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: color-mix(in srgb, var(--oc-fg) 3%, transparent); border-bottom: 1px solid var(--oc-border); flex-shrink:0; }
   .graph-controls button { padding: 4px 8px; font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 8%, transparent); border: 1px solid color-mix(in srgb, var(--oc-fg) 12%, transparent); color: var(--oc-muted); cursor: pointer; }
   .graph-controls button:hover { color: var(--oc-fg); background: color-mix(in srgb, var(--primary) 15%, transparent); border-color: color-mix(in srgb, var(--primary) 40%, transparent); }
+  .graph-retry-btn { padding:6px 12px;font-size:12px; border-radius:4px; background:var(--oc-error); color:#fff;border:none;cursor:pointer; margin-top:12px; }
+  .graph-retry-btn:hover { background:color-mix(in srgb,var(--oc-error) 70%,black); }
   .graph-controls input { width: 64px; padding: 3px 4px; font-family: var(--oc-mono); font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border: none; color: var(--oc-fg); }
   .graph-legend { display: flex; flex-wrap: wrap; gap:6px 10px; padding:6px 12px; border-bottom: 1px solid var(--oc-border); flex-shrink:0; font-size:12px; }
   .graph-legend-group { display:flex; align-items:center; gap:6px; cursor:pointer; padding:2px 4px; border-radius:4px; }
@@ -734,19 +736,29 @@ async function loadData(): Promise<void> {
       sectionGraph?.replaceChildren(errNote);
       return;
     }
+   } catch (err: any) {
+     const sectionGraph = root.querySelector('.section-body.graph-container');
+     if (sectionGraph) {
+       const errNote = document.createElement('div');
+       let msg = err instanceof Error ? err.message : 'Failed to load graph data.';
+       if (msg.includes('graph-not-found') || /not found/i.test(msg)) msg = 'No graphify-out/graph.html found. Run `graphify .` first.';
+       errNote.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--oc-error);font-size:12px;padding:20px;';
+       errNote.textContent = msg;
 
-    if (activeTab === 'graph') await drawGraph(dataRaw);
-  } catch (err: any) {
-    const sectionGraph = root.querySelector('.section-body.graph-container');
-    if (sectionGraph) {
-      const errNote = document.createElement('div');
-      errNote.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--oc-error);font-size:12px';
-      let msg = err instanceof Error ? err.message : 'Failed to load graph data.';
-      if (msg.includes('graph-not-found') || /not found/i.test(msg)) msg = 'No graphify-out/graph.html found. Run `graphify .` first.';
-      errNote.textContent = msg;
-      sectionGraph.replaceChildren(errNote);
-    }
-  }
+       const retryBtn = document.createElement('button');
+       retryBtn.classList.add('graph-retry-btn');
+       retryBtn.type = 'button';
+       retryBtn.textContent = 'Retry';
+
+       retryBtn.addEventListener('click', () => {
+         sectionGraph.replaceChildren();
+         void loadData();
+       });
+
+       errNote.appendChild(retryBtn);
+       sectionGraph.replaceChildren(errNote);
+     }
+   }
 
   // Load report & analysis whenever they are visible.
   if (activeTab === 'report' || activeTab === 'analysis') {
