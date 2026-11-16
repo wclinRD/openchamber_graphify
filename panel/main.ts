@@ -33,8 +33,8 @@ const CSS = `
   #graph-canvas { width: 100%; height: auto; flex: 1; min-height: 0; }
   .report-pre { border: none; box-sizing: border-box; font-size: 12px; line-height: 1.55; color: var(--oc-fg); white-space: pre-wrap; overflow-y: auto; padding: 10px; }
   .section-body.report-body { font-size: 12px; line-height: 1.5; color: var(--oc-fg); }
-  .section-body.report-body h2 { font-size: 14px; margin: 8px 0 6px; }
-  .section-body.report-body h3 { font-size: 12.5px; margin: 8px 0 4px; }
+  .section-body.report-body h1 { font-size: 14px; margin: 8px 0 6px; }
+  .section-body.report-body h2 { font-size: 12.5px; margin: 8px 0 4px; }
   .analysis-grid { display: grid; gap: 12px; padding: 12px; }
   .analysis-card { background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border-radius: 8px; padding: 12px; }
   .analysis-card h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--primary); }
@@ -47,6 +47,9 @@ const CSS = `
   .communities-table th { text-align: left; color: var(--oc-muted); padding: 6px 8px; border-bottom: 1px solid var(--oc-border); }
   .communities-table td { padding: 6px 8px; border-bottom: 1px solid var(--oc-border); }
   .badge-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .graph-loading { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;background-color:transparent;}
+  .graph-spin { width:18px;height:18px;border-radius:50%;border:2.5px solid var(--oc-border); border-top-color:var(--primary);animation:spin .75s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 `;
 
 let activeTab = 'graph';
@@ -179,6 +182,12 @@ async function drawGraph(data: GraphData): Promise<void> {
   graphDiv.id = id;
   body.appendChild(graphDiv);
 
+  const loadingEl = document.createElement('div');
+  loadingEl.id = 'graph-loading';
+  loadingEl.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;background-color:transparent';
+  loadingEl.innerHTML = `<span class="graph-spin"></span><span style="font-size:12px; color:var(--oc-muted); margin-left:8px;">Loading graph…</span>`;
+  body.appendChild(loadingEl);
+
   requestAnimationFrame(async () => {
     const el = document.getElementById(id) as HTMLElement | null;
     if (!el) return;
@@ -209,6 +218,7 @@ async function drawGraph(data: GraphData): Promise<void> {
       networkMap.set('graph', network);
 
       // Group legend and visibility filtering.
+      let legendDiv: HTMLElement | null = null;
       const HUE_MAP: Record<number, string> = { 0:'4E79A7',1:'F28E2B',2:'E15759',3:'76B7B2',4:'59A14F',5:'EDC948',6:'B07AA1' };
       type GroupInfo = { id: number; name: string };
       const communityGroups: Map<number, GroupInfo> = new Map();
@@ -295,14 +305,12 @@ async function drawGraph(data: GraphData): Promise<void> {
           legendDiv?.appendChild(labelEl);
 
           const toggleGroup = () => {
-            checkInput.checked = !checkInput.checked;
             const cid = Number((labelEl as any).dataset.cid);
             if (checkInput.checked) selectedGroups.add(cid); else selectedGroups.delete(cid);
             filterNetwork();
           };
 
           checkInput.addEventListener('change', toggleGroup);
-          labelEl.addEventListener('click', () => { checkInput.checked = !checkInput.checked; toggleGroup(); });
         }
 
         if (graphDiv && graphDiv.parentNode === body) {
@@ -317,35 +325,52 @@ async function drawGraph(data: GraphData): Promise<void> {
 
       const applyFit = (scale?: number) => {
         if (!network) return;
-        if (scale !== undefined) {
-          network.fit({ scale });
-        } else {
-          // vis-network fit without options fits all nodes to viewport
-          network.fit();
-        }
+        try {
+          if (scale !== undefined) network.fit({ scale });
+          else network.fit(); // default fit to all nodes in viewport
+        } catch { /* fallback no error */ }
+
         const s = network.getScale();
         graphScale = Number.isFinite(s) ? s : (scale ?? graphScale);
+
+        // Sync zoom input value to actual network scale.
+        if (inputZoom) {
+          const pct = Math.round(graphScale * 100);
+          inputZoom.value = String(Math.max(25, Math.min(400, pct)));
+        }
       };
 
       const runSetPct = () => {
-        const value = Number(inputZoom.value);
-        if (!Number.isNaN(value) && value >= 25 && value <= 400) {
-          applyFit(value / 100);
-        }
+        inputZoom.value && applyFit(Number(inputZoom.value) / 100);
       };
 
       let graphScaleLocal: number | null = graphScale;
 
-      // Fit to viewport after stabilization completes.
-      (network as any).once?.('stabilizationIterationsDone', () => { applyFit(); network.setOptions({ physics: { enabled: false } }); graphScaleLocal = graphScale; });
+      // Fit to viewport after stabilization completes and clear loading state.
+      (network as any).once?.('stabilizationIterationsDone', () => { applyFit(); network.setOptions({ physics: { enabled: false } }); graphScaleLocal = graphScale; updateInputFromNetwork(); loadingEl.remove(); });
 
       const handleZoomControls = (action: string) => {
         if (!network || !el) return;
         switch (action) {
           case 'reset': applyFit(); break;
-          case 'in': applyFit(graphScaleLocal ?? graphScale * ZOOM_IN_FACTOR); break;
-          case 'out': applyFit(graphScaleLocal ?? graphScale * ZOOM_OUT_FACTOR); break;
+          // Use existing local if available, else relative factor from graphScale.
+          case 'in':
+            if (graphScaleLocal) applyFit(Math.min(4, graphScaleLocal * ZOOM_IN_FACTOR));
+            else applyFit((graphScale * ZOOM_IN_FACTOR) % graphScale); break;
+          case 'out':
+            if (graphScaleLocal) applyFit(Math.max(0.25, graphScaleLocal * ZOOM_OUT_FACTOR));
+            else applyFit((graphScale * ZOOM_OUT_FACTOR) % graphScale); break;
           case 'setpct': runSetPct(); break;
+        }
+      };
+
+      // Helper to update visual network scale display from actual getScale(), used after stabilization.
+      const updateInputFromNetwork = () => {
+        if (network && inputZoom) {
+          const s = network.getScale();
+          graphScale = Number.isFinite(s) ? s : graphScale;
+          const pct = Math.round(graphScale * 100);
+          inputZoom.value = String(Math.max(25, Math.min(400, pct)));
         }
       };
 
@@ -431,18 +456,18 @@ async function renderReport(report: string): Promise<void> {
   for (const line of lines) {
     if (/^# /.test(line)) {
       closeList();
-      const h1 = document.createElement('h2');
+      const h1 = document.createElement('h1');
       h1.style.marginLeft = '0px';
       appendInlineMarkdown(h1, line.replace(/^# /, ''));
       container.appendChild(h1);
     } else if (/^## /.test(line)) {
       closeList();
-      const h2 = document.createElement('h3');
+      const h2 = document.createElement('h2');
       appendInlineMarkdown(h2, line.replace(/^## /, ''));
       container.appendChild(h2);
     } else if (/^### /.test(line)) {
       closeList();
-      const h3 = document.createElement('h4');
+      const h3 = document.createElement('h3');
       appendInlineMarkdown(h3, line.replace(/^### /, ''));
       container.appendChild(h3);
     } else if (/^[-*] /.test(line)) {
