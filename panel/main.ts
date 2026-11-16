@@ -74,7 +74,7 @@ function renderTabs(): void {
 
   const tabsEl = document.createElement('div');
   tabsEl.classList.add('tabs');
-  tabEl.setAttribute('role', 'tablist');
+  tabsEl.setAttribute('role', 'tablist');
 
   for (const tab of tabsData) {
     const btnId = `tab-${tab.id}`;
@@ -214,7 +214,8 @@ async function drawGraph(data: GraphData): Promise<void> {
 
   requestAnimationFrame(async () => {
     const el = document.getElementById(id) as HTMLElement | null;
-    if (!el) return;
+    // Guard against stale draws: only proceed if this graphDiv is still the active one.
+    if (!el || !graphDiv.parentNode) return;
 
     try {
       await ensureVisNetwork(data.visNetworkLibCode);
@@ -728,7 +729,7 @@ async function loadData(): Promise<void> {
     sectionGraph.replaceChildren(note);
   }
 
-  try {
+try {
     const dataRaw = await fetchGraphData();
     if (!dataRaw || !Array.isArray(dataRaw.nodes) || !Array.isArray(dataRaw.edges)) {
       const errNote = document.createElement('div');
@@ -737,6 +738,9 @@ async function loadData(): Promise<void> {
       sectionGraph?.replaceChildren(errNote);
       return;
     }
+
+    if (activeTab === 'graph') await drawGraph(dataRaw);
+
    } catch (err: any) {
      const sectionGraph = root.querySelector('.section-body.graph-container');
      if (sectionGraph) {
