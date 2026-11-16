@@ -4,7 +4,7 @@ import type { HostReadyContext } from '@openchamber/sdk';
 import { applyHostReady } from '@openchamber/sdk/ui';
 
 declare var vis: any;
-type GraphData = { nodes: Record<string, any>[]; edges: Record<string, any>[] };
+type GraphData = { nodes: Record<string, any>[]; edges: Record<string, any>[]; visNetworkLibCode?: string };
 
 const host = connectHost();
 let root: HTMLElement | null;
@@ -96,9 +96,9 @@ function createSection(id: string, title: string): HTMLElement {
 
 const networkMap = new Map<string, any>();
 
-async function fetchGraphData(): Promise<unknown> {
+async function fetchGraphData(): Promise<GraphData> {
   const r = await host.serviceRequest!({ method: 'GET', path: '/graph/data', query: { directory } });
-  return JSON.parse(r.body);
+  return JSON.parse(r.body) as GraphData;
 }
 
 function ensureVisNetwork(code?: string): Promise<void> {
@@ -120,7 +120,7 @@ function ensureVisNetwork(code?: string): Promise<void> {
   });
 }
 
-async function drawGraph(nodes: any[], edges: any[]): Promise<void> {
+async function drawGraph(data: GraphData): Promise<void> {
   const body = root?.querySelector<HTMLElement>(`.section-body.graph-container`);
   if (!body) return;
 
@@ -135,17 +135,17 @@ async function drawGraph(nodes: any[], edges: any[]): Promise<void> {
     if (!el) return;
 
     try {
-      await ensureVisNetwork();
+      await ensureVisNetwork(data.visNetworkLibCode);
       networkMap.delete('graph');
 
       // Build dataset preserving community color but using vis-network options.
-      const netNodes = nodes.map((node, i) => ({
+      const netNodes = data.nodes.map((node, i) => ({
         ...node,
         x: 30 * Math.sqrt(i) * Math.cos((i + 1) * 2.4),
         y: 30 * Math.sqrt(i + 1) * Math.sin((i + 1) * 2.4),
       }));
 
-      const netEdges = edges.map((edge, i) => ({
+      const netEdges = data.edges.map((edge, i) => ({
         id: String(i), from: edge.from, to: edge.to, color: edge.color ?? { opacity: 0.7 }, width: edge.width ?? 2, dashed: edge.dashes ?? false,
         arrows: { to: { enabled: true, scaleFactor: 0.5 } }, title: edge.title ?? '',
       }));
@@ -403,7 +403,7 @@ async function loadData(): Promise<void> {
   }
 
   try {
-    const dataRaw = await fetchGraphData() as GraphData;
+    const dataRaw = await fetchGraphData();
     if (!dataRaw || !Array.isArray(dataRaw.nodes) || !Array.isArray(dataRaw.edges)) {
       const errNote = document.createElement('div');
       errNote.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--oc-error);font-size:12px';
@@ -412,7 +412,7 @@ async function loadData(): Promise<void> {
       return;
     }
 
-    if (activeTab === 'graph') await drawGraph(dataRaw.nodes, dataRaw.edges);
+    if (activeTab === 'graph') await drawGraph(dataRaw);
   } catch (err: any) {
     const sectionGraph = root.querySelector('.section-body.graph-container');
     if (sectionGraph) {

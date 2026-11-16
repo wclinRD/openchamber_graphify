@@ -14,7 +14,7 @@
       "panel": {
         "id": "openchamber-graphify",
         "name": "Graphify Graph",
-        "icon": "graph-line",
+        "icon": "graph.svg",
         "entry": "panel/index.html"
       },
       "statusSection": {
