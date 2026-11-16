@@ -24,6 +24,9 @@
   .section-body.graph-container { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
   #graph-canvas { width: 100%; height: auto; flex: 1; min-height: 0; }
   .report-pre { border: none; box-sizing: border-box; font-size: 12px; line-height: 1.55; color: var(--oc-fg); white-space: pre-wrap; overflow-y: auto; padding: 10px; }
+  .section-body.report-body { font-size: 12px; line-height: 1.5; color: var(--oc-fg); }
+  .section-body.report-body h2 { font-size: 14px; margin: 8px 0 6px; }
+  .section-body.report-body h3 { font-size: 12.5px; margin: 8px 0 4px; }
   .analysis-grid { display: grid; gap: 12px; padding: 12px; }
   .analysis-card { background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border-radius: 8px; padding: 12px; }
   .analysis-card h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--primary); }
