@@ -1,0 +1,37 @@
+{
+  "name": "openchamber-graphify",
+  "version": "1.0.2",
+  "private": true,
+  "type": "module",
+  "description": "Work Status section that displays the graphify-out/graph.html when present in a project",
+  "scripts": {
+    "build": "bun run scripts/build.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "openchamber": {
+    "apiVersion": 1,
+    "contributes": {
+      "panel": {
+        "id": "openchamber-graphify",
+        "name": "Graphify Graph",
+        "icon": "graph-line"
+      },
+      "statusSection": {
+        "entry": "status/index.html",
+        "title": "Graphify Graph",
+        "height": 680,
+        "defaultExpanded": false,
+        "requiresProject": true
+      },
+      "service": {
+        "entry": "service/main.js",
+        "runtime": "host"
+      }
+    }
+  },
+
+  "devDependencies": {
+    "@openchamber/sdk": "^2.3.3",
+    "@types/node": "^20"
+  }
+}
