@@ -392,6 +392,20 @@ async function drawGraph(data: GraphData): Promise<void> {
       // Make canvas responsive to container size.
       new ResizeObserver(() => network?.resize?.()).observe(el);
 
+      // Keyboard shortcuts for zoom: +, -, and 0 reset (when graph section is active)
+      el.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (!network || e.key === 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey) return;
+        if (activeTab !== 'graph') return;
+        switch (e.key) {
+          case '+':
+            e.preventDefault(); handleZoomControls('in'); break;
+          case '-':
+            e.preventDefault(); handleZoomControls('out'); break;
+          case '0':
+            e.preventDefault(); handleZoomControls('reset'); break;
+        }
+      });
+
     } catch (err: any) {
       networkMap.delete('graph');
       body.replaceChildren();
