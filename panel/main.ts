@@ -175,13 +175,12 @@ async function drawGraph(data: GraphData): Promise<void> {
     controls.appendChild(btn);
   }
 
-  makeButton('Default', 'reset');
-  makeButton('Zoom In', 'in');
-  makeButton('Zoom Out', 'out');
+ // Replace with compact zoom controls: [−] [zoom input] [+]
+  makeButton('−', 'out');
 
   const labelSpan = document.createElement('span');
   labelSpan.style.cssText = 'font-size:12px; color:var(--oc-muted); margin-left:6px';
-  labelSpan.textContent = 'Zoom %:';
+  labelSpan.textContent = '%';
   controls.appendChild(labelSpan);
 
   const inputZoom = document.createElement('input');
@@ -190,14 +189,9 @@ async function drawGraph(data: GraphData): Promise<void> {
   inputZoom.step = '10';
   inputZoom.min = '25';
   inputZoom.max = '400';
-  inputZoom.placeholder = '100%';
-
-  const goButton = document.createElement('button');
-  goButton.textContent = 'Go';
-  goButton.dataset.action = 'setpct';
 
   controls.appendChild(inputZoom);
-  controls.appendChild(goButton);
+  makeButton('+', 'in');
 
   body.appendChild(controls);
 
