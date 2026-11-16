@@ -115,6 +115,80 @@ async function readGraphHtml(directory: string) {
   return html;
 }
 
+async function readGraphReport(directory: string): Promise<string> {
+  const baseDir = path.resolve(directory);
+  const reportPath = path.join(baseDir, "graphify-out", "GRAPH_REPORT.md");
+
+  const rel = path.relative(baseDir, reportPath);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error("not-found");
+  }
+
+  let text: string;
+  try {
+    text = await fs.readFile(reportPath, "utf8");
+  } catch (err) {
+    if (err instanceof Error && "code" in err && err.code === "ENOENT") {
+      throw new Error("report-not-found");
+    }
+    throw err;
+  }
+
+  return text;
+}
+
+async function readAnalysisJson(directory: string): Promise<unknown> {
+  const baseDir = path.resolve(directory);
+  const analysisPath = path.join(baseDir, "graphify-out", ".graphify_analysis.json");
+
+  const rel = path.relative(baseDir, analysisPath);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error("not-found");
+  }
+
+  let text: string;
+  try {
+    text = await fs.readFile(analysisPath, "utf8");
+  } catch (err) {
+    if (err instanceof Error && "code" in err && err.code === "ENOENT") {
+      throw new Error("analysis-not-found");
+    }
+    throw err;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error("analysis-parse-error");
+  }
+}
+
+async function readManifest(directory: string): Promise<unknown> {
+  const baseDir = path.resolve(directory);
+  const manifestPath = path.join(baseDir, "graphify-out", "manifest.json");
+
+  const rel = path.relative(baseDir, manifestPath);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error("not-found");
+  }
+
+  let text: string;
+  try {
+    text = await fs.readFile(manifestPath, "utf8");
+  } catch (err) {
+    if (err instanceof Error && "code" in err && err.code === "ENOENT") {
+      throw new Error("manifest-not-found");
+    }
+    throw err;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error("manifest-parse-error");
+  }
+}
+
 const server = http.createServer(async (req: http.IncomingMessage, res: http.ServerResponse) => {
   if (req.headers.authorization !== `Bearer ${token}`) {
     sendJson(res, 401, { error: "unauthorized" });
@@ -162,6 +236,42 @@ const server = http.createServer(async (req: http.IncomingMessage, res: http.Ser
       return sendJson(res, 400, { error: "parse-error" });
     }
 
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/report") {
+    let report: string;
+    try { report = await readGraphReport(directory); } catch (err) {
+      if (err instanceof Error && err.message === "report-not-found") return sendJson(res, 404, { error: "graph not found" });
+      if (err instanceof Error && err.message === "not-found") return sendJson(res, 403, { error: "not-found" });
+      return sendJson(res, 500, { error: err instanceof Error ? err.message : "read-error" });
+    }
+
+    sendJson(res, 200, { report });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/analysis") {
+    let analysis: unknown;
+    try { analysis = await readAnalysisJson(directory); } catch (err) {
+      if (err instanceof Error && (err.message === "analysis-not-found" || err.message === "analysis-parse-error")) return sendJson(res, 404, { error: "graph not found" });
+      if (err instanceof Error && err.message === "not-found") return sendJson(res, 403, { error: "not-found" });
+      return sendJson(res, 500, { error: err instanceof Error ? err.message : "read-error" });
+    }
+
+    sendJson(res, 200, { analysis });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/manifest") {
+    let manifest: unknown;
+    try { manifest = await readManifest(directory); } catch (err) {
+      if (err instanceof Error && (err.message === "manifest-not-found" || err.message === "manifest-parse-error")) return sendJson(res, 404, { error: "graph not found" });
+      if (err instanceof Error && err.message === "not-found") return sendJson(res, 403, { error: "not-found" });
+      return sendJson(res, 500, { error: err instanceof Error ? err.message : "read-error" });
+    }
+
+    sendJson(res, 200, { manifest });
     return;
   }
 

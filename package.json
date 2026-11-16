@@ -3,7 +3,7 @@
   "version": "1.0.2",
   "private": true,
   "type": "module",
-  "description": "Work Status section that displays the graphify-out/graph.html when present in a project",
+  "description": "OpenChamber extension with a graphify-out interactive panel and status section",
   "scripts": {
     "build": "bun run scripts/build.ts",
     "typecheck": "tsc --noEmit"
@@ -14,7 +14,8 @@
       "panel": {
         "id": "openchamber-graphify",
         "name": "Graphify Graph",
-        "icon": "graph-line"
+        "icon": "graph-line",
+        "entry": "panel/index.html"
       },
       "statusSection": {
         "entry": "status/index.html",
