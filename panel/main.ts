@@ -252,13 +252,13 @@ async function drawGraph(data: GraphData): Promise<void> {
 
         for (const edge of netEdges) {
           if (visibleNodeIds.has(String(edge.from)) && visibleNodeIds.has(String(edge.to))) {
-            selectedEdgeIds.add(String((edge as any).id ?? netEdges.indexOf(edge)));
+            selectedEdgeIds.add(String((edge as any).id));
           }
         }
 
-        const filteredEdges = netEdges.filter(e => selectedEdgeIds.has(String((e as any).id ?? netEdges.indexOf(e))));
+        const filteredEdges = netEdges.filter(e => selectedEdgeIds.has(String((e as any).id)));
 
-        try { network.update({ nodes: filteredNodes.map(n => ({ id: String(n.id), hidden: !visibleNodeIds.has(String(n.id)) })), edges: filteredEdges.map(e => ({ id: String((e as any).id ?? netEdges.indexOf(e)), hidden: !visibleNodeIds.has(String(e.from)) || !visibleNodeIds.has(String(e.to)) })) }); } catch {}
+        try { network.update({ nodes: filteredNodes.map(n => ({ id: String(n.id), hidden: !visibleNodeIds.has(String(n.id)) })), edges: filteredEdges.map(e => ({ id: String((e as any).id), hidden: !visibleNodeIds.has(String(e.from)) || !visibleNodeIds.has(String(e.to)) })) }); } catch {}
 
         const oldTitle = legendDiv?.querySelector<HTMLElement>('.legend-title');
         if (communityGroups.size === 0) { oldTitle?.replaceChildren(new Text('No groups available')); }
