@@ -71,11 +71,21 @@ function renderTabs(): void {
 
   const tabsEl = document.createElement('div');
   tabsEl.classList.add('tabs');
+  tabEl.setAttribute('role', 'tablist');
+
   for (const tab of tabsData) {
+    const btnId = `tab-${tab.id}`;
     const btn = document.createElement('button');
     btn.type = 'button';
+    btn.id = btnId;
     btn.classList.add('tab');
-    if (tab.id === activeTab) btn.classList.add('active');
+    if (tab.id === activeTab) {
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+    } else {
+      btn.setAttribute('aria-selected', 'false');
+    }
+    btn.setAttribute('role', 'tab');
     btn.textContent = tab.label;
     btn.addEventListener('click', () => { activeTab = tab.id; renderTabs(); });
     tabsEl.appendChild(btn);
@@ -95,7 +105,13 @@ function createSection(id: string, title: string): HTMLElement {
   const el = document.createElement('div');
   el.id = id;
   el.classList.add('content');
-  if (id === activeTab) el.classList.add('active');
+  el.setAttribute('role', 'tabpanel');
+  if (id === activeTab) {
+    el.classList.add('active');
+    el.setAttribute('aria-labelledby', `tab-${id}`);
+  } else {
+    el.removeAttribute('aria-labelledby');
+  }
 
   const head = document.createElement('div');
   head.classList.add('section-head', id + '-head');
