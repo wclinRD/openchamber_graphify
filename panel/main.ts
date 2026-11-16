@@ -25,8 +25,12 @@ const CSS = `
   .content.active { display: flex; flex-direction: column; height: auto; overflow: hidden; }
   .section-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; color: var(--oc-muted); border-bottom: 1px solid var(--oc-border); }
   .section-body { padding: 0; overflow-y: auto; flex: 1; }
-  .section-body.graph-container { width: 100%; height: 100%; }
-  #graph-canvas { width: 100%; height: 100%; }
+  .graph-controls { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: color-mix(in srgb, var(--oc-fg) 3%, transparent); border-bottom: 1px solid var(--oc-border); flex-shrink:0; }
+  .graph-controls button { padding: 4px 8px; font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 8%, transparent); border: none; color: var(--oc-muted); cursor: pointer; }
+  .graph-controls button:hover { color: var(--oc-fg); background: color-mix(in srgb, var(--primary) 15%, transparent); }
+  .graph-controls input { width: 64px; padding: 3px 4px; font-family: var(--oc-mono); font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border: none; color: var(--oc-fg); }
+  .section-body.graph-container { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
+  #graph-canvas { width: 100%; height: auto; flex: 1; min-height: 0; }
   .report-pre { border: none; box-sizing: border-box; font-size: 12px; line-height: 1.55; color: var(--oc-fg); white-space: pre-wrap; overflow-y: auto; }
   .analysis-grid { display: grid; gap: 12px; padding: 12px; }
   .analysis-card { background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border-radius: 8px; padding: 12px; }
@@ -97,6 +101,10 @@ function createSection(id: string, title: string): HTMLElement {
 
 const networkMap = new Map<string, any>();
 
+let graphScale = 1;
+const ZOOM_IN_FACTOR = 1.25;
+const ZOOM_OUT_FACTOR = 0.8;
+
 async function fetchGraphData(): Promise<GraphData> {
   const r = await host.serviceRequest!({ method: 'GET', path: '/graph/data', query: { directory } });
   return JSON.parse(r.body) as GraphData;
@@ -126,11 +134,40 @@ async function drawGraph(data: GraphData): Promise<void> {
   if (!body) return;
 
   body.replaceChildren();
+
+  const controls = document.createElement('div');
+  controls.classList.add('graph-controls');
+
+  function makeButton(text: string, action: string) {
+    const btn = document.createElement('button');
+    btn.textContent = text;
+    btn.dataset.action = action;
+    controls.appendChild(btn);
+  }
+
+  makeButton('Default', 'reset');
+  makeButton('Zoom In', 'in');
+  makeButton('Zoom Out', 'out');
+
+  const labelSpan = document.createElement('span');
+  labelSpan.style.cssText = 'font-size:12px; color:var(--oc-muted); margin-left:6px';
+  labelSpan.textContent = 'Zoom %:';
+  controls.appendChild(labelSpan);
+
+  const inputZoom = document.createElement('input');
+  inputZoom.type = 'number';
+  inputZoom.classList.add('graph-zoom-input');
+  inputZoom.step = '10';
+  inputZoom.min = '25';
+  inputZoom.max = '400';
+  inputZoom.placeholder = '100%';
+  controls.appendChild(inputZoom);
+
+  body.appendChild(controls);
+
   const graphDiv = document.createElement('div');
   const id = 'graph-canvas';
   graphDiv.id = id;
-  graphDiv.style.width = '100%';
-  graphDiv.style.height = '100%';
   body.appendChild(graphDiv);
 
   requestAnimationFrame(async () => {
@@ -161,16 +198,49 @@ async function drawGraph(data: GraphData): Promise<void> {
       });
 
       networkMap.set('graph', network);
-      (network as any).once?.('stabilizationIterationsDone', () => {
-        network.setOptions({ physics: { enabled: false } });
+
+      const applyFit = (scale?: number) => {
+        if (!network) return;
+        network.fit(scale !== undefined ? { scale } : {});
+        const s = network.getScale();
+        graphScale = Number.isFinite(s) ? s : (scale ?? graphScale);
+      };
+
+      const runSetPct = () => {
+        const value = Number(inputZoom.value);
+        if (!Number.isNaN(value) && value >= 25 && value <= 400) {
+          applyFit(value / 100);
+        }
+      };
+
+      let graphScaleLocal: number | null = graphScale;
+
+      // Fit to viewport after stabilization completes.
+      (network as any).once?.('stabilizationIterationsDone', () => { applyFit(); network.setOptions({ physics: { enabled: false } }); graphScaleLocal = graphScale; });
+
+      const handleZoomControls = (action: string) => {
+        if (!network || !el) return;
+        switch (action) {
+          case 'reset': applyFit(); break;
+          case 'in': applyFit(graphScaleLocal ?? graphScale * ZOOM_IN_FACTOR); break;
+          case 'out': applyFit(graphScaleLocal ?? graphScale * ZOOM_OUT_FACTOR); break;
+          case 'setpct': runSetPct(); break;
+        }
+      };
+
+      controls.querySelectorAll('button[data-action]').forEach((button) => {
+        const act = button.dataset.action as string;
+        if (act && network) {
+          button.addEventListener('click', () => handleZoomControls(act));
+        }
+      });
+
+      inputZoom.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.keyCode === 13) runSetPct();
       });
 
       // Make canvas responsive to container size.
       new ResizeObserver(() => network?.resize?.()).observe(el);
-
-      body.addEventListener('pointerup', () => {
-        new ResizeObserver(() => network?.resize?.()).observe(el);
-      });
 
     } catch (err: any) {
       networkMap.delete('graph');
