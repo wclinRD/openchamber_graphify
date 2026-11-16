@@ -1,7 +1,6 @@
 // panel/main.ts
 import { connectHost } from '@openchamber/sdk';
-import type { HostReadyContext } from '@openchamber/sdk';
-import { applyHostReady } from '@openchamber/sdk/ui';
+import type { HostReadyContext, HostTheme } from '@openchamber/sdk/contract';
 
 declare var vis: any;
 type GraphData = { nodes: Record<string, any>[]; edges: Record<string, any>[]; visNetworkLibCode?: string };
@@ -479,6 +478,44 @@ function esc(s: string): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** Apply the host theme tokens onto document root. */
+function applyHostTheme(theme: HostTheme, root: HTMLElement): void {
+  const tokenMap = [
+    ['--oc-bg', 'background'],
+    ['--oc-elevated', 'elevated'],
+    ['--oc-fg', 'foreground'],
+    ['--oc-muted', 'muted'],
+    ['--oc-subtle', 'subtle'],
+    ['--oc-border', 'border'],
+    ['--oc-hover', 'hover'],
+    ['--oc-selection', 'selection'],
+    ['--oc-focus', 'focus'],
+    ['--oc-primary', 'primary'],
+    ['--oc-muted-surface', 'mutedSurface'],
+    ['--oc-elevated-fg', 'elevatedForeground'],
+    ['--oc-active', 'active'],
+    ['--oc-selection-fg', 'selectionForeground'],
+    ['--oc-primary-fg', 'primaryForeground'],
+    ['--oc-primary-text', 'primaryText'],
+    ['--oc-success-text', 'successText'],
+    ['--oc-warning-text', 'warningText'],
+    ['--oc-error-text', 'errorText'],
+    ['--oc-info-text', 'infoText'],
+    ['--oc-success', 'success'],
+    ['--oc-warning', 'warning'],
+    ['--oc-error', 'error'],
+    ['--oc-info', 'info'],
+    ['--oc-font', 'font'],
+    ['--oc-mono', 'mono'],
+    ['--oc-radius', 'radius'],
+  ] as const;
+
+  root.style.colorScheme = theme.mode;
+  for (const [name, key] of tokenMap) {
+    root.style.setProperty(name, String(theme.tokens[key]));
+  }
+}
+
 async function loadData(): Promise<void> {
   if (!root || !directory) return;
 
@@ -555,10 +592,18 @@ function setupResize(): void {
 
 let started = false;
 host.onReady((ctx: HostReadyContext) => {
+  // Apply host theme every time (e.g. when app/system theme changes).
+  applyHostTheme(ctx.theme, document.documentElement);
+
+  if (document.documentElement.dataset) {
+    document.documentElement.dataset.ocSurface = ctx.surface;
+    document.documentElement.dataset.ocTheme = ctx.theme.mode;
+  }
+
+  // Full UI setup only on the first ready event.
   if (started) return;
   started = true;
 
-  applyHostReady(ctx, document.documentElement);
   root = document.getElementById('root') || null;
 
   if (root) {
