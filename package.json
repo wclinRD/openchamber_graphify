@@ -19,7 +19,7 @@
       "statusSection": {
         "entry": "status/index.html",
         "title": "Graphify Graph",
-        "height": 680,
+        "height": 980,
         "defaultExpanded": false,
         "requiresProject": true
       },
