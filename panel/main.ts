@@ -12,18 +12,11 @@ let directory: string | null = null;
 const CSS = `
   html, body { margin: 0; padding: 0; height: 100%; }
   #root { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-  .tabs { display: flex; background: color-mix(in srgb, var(--oc-fg) 3%, transparent); border-bottom: 1px solid var(--oc-border); }
-  .tab {
-    position: relative; flex: 0 1 auto; padding: 8px 14px; font-size: 13px; color: var(--oc-muted);
-    cursor: pointer; user-select: none;
-    border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom: none;
-    margin-left: -1px; background-color: color-mix(in srgb, var(--oc-fg) 4%, transparent);
-    border-top: 1px solid var(--oc-border); border-left: 1px solid var(--oc-border); border-right: 1px solid var(--oc-border);
-    transition: background-color .15s ease, color .15s ease;
-  }
-  .tab:first-child { margin-left: 0; }
-  .tab:hover:not(.active) { color: var(--oc-fg); background-color: color-mix(in srgb, var(--primary) 8%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, transparent); }
-  .tab.active { color: #fff; background-color: var(--primary); border-bottom-color: transparent !important; font-weight: 600; }
+  .tabs { display: flex; background: color-mix(in srgb, var(--oc-fg) 3%, transparent); border-bottom:1px solid var(--oc-border); }
+  .tab { flex:0 1 auto; padding:8px 14px; font-size:13px; color:var(--oc-muted); cursor:pointer; user-select:none; transition:background-color .15s ease, color .15s ease; }
+  .tab:hover:not(.active) { background-color:color-mix(in srgb, var(--primary) 8%, transparent); color:var(--oc-fg); }
+  .tab.active { position:relative; background-color:color-mix(in srgb, var(--primary) 15%, transparent); color:var(--primary-text)!important; font-weight:600; }
+  .tab.active::after { content:''; position:absolute; left:8px; right:8px; bottom:-1px; height:2px; background-color:var(--primary); pointer-events:none; }
   .content { flex: 1; display: none; overflow: hidden; height: 0; }
   .content.active { display: flex; flex-direction: column; height: auto; overflow: hidden; }
   .section-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; color: var(--oc-muted); border-bottom: 1px solid var(--oc-border); }
