@@ -24,6 +24,11 @@ const CSS = `
   .graph-controls button { padding: 4px 8px; font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 8%, transparent); border: 1px solid color-mix(in srgb, var(--oc-fg) 12%, transparent); color: var(--oc-muted); cursor: pointer; }
   .graph-controls button:hover { color: var(--oc-fg); background: color-mix(in srgb, var(--primary) 15%, transparent); border-color: color-mix(in srgb, var(--primary) 40%, transparent); }
   .graph-controls input { width: 64px; padding: 3px 4px; font-family: var(--oc-mono); font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border: none; color: var(--oc-fg); }
+  .graph-legend { display: flex; flex-wrap: wrap; gap:6px 10px; padding:6px 12px; border-bottom: 1px solid var(--oc-border); flex-shrink:0; font-size:12px; }
+  .graph-legend-group { display:flex; align-items:center; gap:6px; cursor:pointer; padding:2px 4px; border-radius:4px; }
+  .graph-legend-group:hover { background-color: color-mix(in srgb, var(--primary) 8%, transparent); }
+  .graph-legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .graph-legend-check { accent-color:var(--primary); margin-left:2px; }
   .section-body.graph-container { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
   #graph-canvas { width: 100%; height: auto; flex: 1; min-height: 0; }
   .report-pre { border: none; box-sizing: border-box; font-size: 12px; line-height: 1.55; color: var(--oc-fg); white-space: pre-wrap; overflow-y: auto; padding: 10px; }
@@ -202,6 +207,109 @@ async function drawGraph(data: GraphData): Promise<void> {
       });
 
       networkMap.set('graph', network);
+
+      // Group legend and visibility filtering.
+      const HUE_MAP: Record<number, string> = { 0:'4E79A7',1:'F28E2B',2:'E15759',3:'76B7B2',4:'59A14F',5:'EDC948',6:'B07AA1' };
+      type GroupInfo = { id: number; name: string };
+      const communityGroups: Map<number, GroupInfo> = new Map();
+
+      for (const node of netNodes) {
+        const cidVal: any = (node as any).community;
+        if (cidVal == null || cidVal === '') continue;
+        const cid = Number(cidVal);
+        if (!Number.isNaN(cid)) {
+          communityGroups.set(cid, { id: cid, name: (node as any).community_name ?? `Community ${cid}` });
+        }
+      }
+
+      const selectedGroups = new Set<number>([...communityGroups.keys()]);
+
+      function colorDot(cid: number): string { return '#' + (HUE_MAP[cid] || '888888'); }
+
+      function filterNetwork(): void {
+        const visibleNodeIds = new Set<string>();
+        for (const node of netNodes) {
+          const cidVal: any = (node as any).community;
+          if (cidVal == null || selectedGroups.has(Number(cidVal))) { visibleNodeIds.add(String(node.id)); }
+        }
+
+        const filteredNodes = netNodes.filter(n => visibleNodeIds.has(String(n.id)));
+        const selectedEdgeIds = new Set<string>();
+
+        for (const edge of netEdges) {
+          if (visibleNodeIds.has(String(edge.from)) && visibleNodeIds.has(String(edge.to))) {
+            selectedEdgeIds.add(String((edge as any).id ?? netEdges.indexOf(edge)));
+          }
+        }
+
+        const filteredEdges = netEdges.filter(e => selectedEdgeIds.has(String((e as any).id ?? netEdges.indexOf(e))));
+
+        try { network.update({ nodes: filteredNodes.map(n => ({ id: String(n.id), hidden: !visibleNodeIds.has(String(n.id)) })), edges: filteredEdges.map(e => ({ id: String((e as any).id ?? netEdges.indexOf(e)), hidden: !visibleNodeIds.has(String(e.from)) || !visibleNodeIds.has(String(e.to)) })) }); } catch {}
+
+        const oldTitle = legendDiv?.querySelector<HTMLElement>('.legend-title');
+        if (communityGroups.size === 0) { oldTitle?.replaceChildren(new Text('No groups available')); }
+        else if (selectedGroups.size === 0) { oldTitle?.replaceChildren(new Text('No groups selected')); }
+        else if (selectedGroups.size === communityGroups.size) { oldTitle?.replaceChildren(new Text(`All groups (${communityGroups.size}) selected`)); }
+        else { oldTitle?.replaceChildren(new Text(`Selected: ${selectedGroups.size}/${communityGroups.size}`)); }
+
+        legendDiv?.querySelectorAll('.graph-legend-check')
+          .forEach((input) => { const label = input.closest('label'); if (label) input.checked = selectedGroups.has(Number(label.dataset.cid)); });
+      }
+
+      function buildLegend(): void {
+        if (communityGroups.size === 0) return;
+
+        legendDiv = document.createElement('div');
+        legendDiv.classList.add('graph-legend', 'group-legend');
+
+        const titleContainer = document.createElement('span');
+        titleContainer.classList.add('legend-title', 'graph-legend-title');
+        if (selectedGroups.size === communityGroups.size) titleContainer.textContent = `All groups (${communityGroups.size}) selected`;
+        else if (selectedGroups.size === 0) titleContainer.textContent = 'No groups selected';
+        else titleContainer.textContent = `Selected: ${selectedGroups.size}/${communityGroups.size}`;
+
+        legendDiv.appendChild(titleContainer);
+
+        for (const group of communityGroups.values()) {
+          const labelEl = document.createElement('label');
+          labelEl.classList.add('graph-legend-group', 'group-item');
+          (labelEl as any).dataset.cid = String(group.id);
+
+          const colorDotSpan = document.createElement('span');
+          colorDotSpan.classList.add('graph-legend-dot', 'group-color');
+          colorDotSpan.style.backgroundColor = colorDot(group.id);
+
+          const labelNameSpan = document.createElement('span');
+          labelNameSpan.style.cssText = 'font-size:12px';
+          labelNameSpan.textContent = group.name;
+
+          const checkInput = document.createElement('input');
+          checkInput.type = 'checkbox';
+          checkInput.classList.add('graph-legend-check');
+          checkInput.checked = selectedGroups.has(group.id);
+
+          labelEl.appendChild(colorDotSpan);
+          labelEl.appendChild(labelNameSpan);
+          labelEl.appendChild(checkInput);
+
+          legendDiv?.appendChild(labelEl);
+
+          checkInput.addEventListener('change', (e) => {
+            const cb = e.currentTarget as HTMLInputElement;
+            if (!labelEl) return;
+            const cid = Number((labelEl as any).dataset.cid);
+            if (cb.checked) selectedGroups.add(cid); else selectedGroups.delete(cid);
+            filterNetwork();
+          });
+
+          labelEl.addEventListener('click', () => { checkInput.checked = !checkInput.checked; checkInput.dispatchEvent(new Event('change')); });
+        }
+
+        body.insertBefore(legendDiv, graphDiv);
+      }
+
+      buildLegend();
+      filterNetwork();
 
       const applyFit = (scale?: number) => {
         if (!network) return;
