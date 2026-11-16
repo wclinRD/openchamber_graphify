@@ -25,7 +25,8 @@ const CSS = `
   .content.active { display: flex; flex-direction: column; height: auto; overflow: hidden; }
   .section-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; color: var(--oc-muted); border-bottom: 1px solid var(--oc-border); }
   .section-body { padding: 0; overflow-y: auto; flex: 1; }
-  .graph-container { width: 100%; height: calc(100% - 30px); }
+  .section-body.graph-container { width: 100%; height: 100%; }
+  #graph-canvas { width: 100%; height: 100%; }
   .report-pre { border: none; box-sizing: border-box; font-size: 12px; line-height: 1.55; color: var(--oc-fg); white-space: pre-wrap; overflow-y: auto; }
   .analysis-grid { display: grid; gap: 12px; padding: 12px; }
   .analysis-card { background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border-radius: 8px; padding: 12px; }
@@ -128,6 +129,8 @@ async function drawGraph(data: GraphData): Promise<void> {
   const graphDiv = document.createElement('div');
   const id = 'graph-canvas';
   graphDiv.id = id;
+  graphDiv.style.width = '100%';
+  graphDiv.style.height = '100%';
   body.appendChild(graphDiv);
 
   requestAnimationFrame(async () => {
