@@ -34,7 +34,7 @@ const CSS = `
   .graph-controls input { width: 64px; padding: 3px 4px; font-family: var(--oc-mono); font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border: none; color: var(--oc-fg); }
   .section-body.graph-container { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
   #graph-canvas { width: 100%; height: auto; flex: 1; min-height: 0; }
-  .report-pre { border: none; box-sizing: border-box; font-size: 12px; line-height: 1.55; color: var(--oc-fg); white-space: pre-wrap; overflow-y: auto; }
+  .report-pre { border: none; box-sizing: border-box; font-size: 12px; line-height: 1.55; color: var(--oc-fg); white-space: pre-wrap; overflow-y: auto; padding: 10px; }
   .analysis-grid { display: grid; gap: 12px; padding: 12px; }
   .analysis-card { background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border-radius: 8px; padding: 12px; }
   .analysis-card h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--primary); }
@@ -287,56 +287,87 @@ async function renderReport(report: string): Promise<void> {
 
   body.replaceChildren();
 
-  // Simple markdown-like formatting: headings and list items.
-  const preEl = document.createElement('pre');
-  preEl.classList.add('report-pre');
+  // Container with horizontal and vertical padding = boundary separation.
+  const container = document.createElement('div');
+  container.style.cssText = 'padding:10px; overflow-y:auto; height:calc(100% - 2px); box-sizing:border-box';
+  body.appendChild(container);
+
+  // Simple markdown-like formatting: headings, lists and inline code/bold/italic.
+  let listOpen = false;
+
+  function closeList(): void {
+    if (listOpen) container.appendChild(currentList);
+    listOpen = false;
+  }
+
+  let currentList: HTMLUListElement | HTMLOListElement | null = null;
+
+  function createInlineSpan(): HTMLSpanElement {
+    const span = document.createElement('span');
+    return span;
+  }
+
+  function appendInlineMarkdown(target: HTMLElement, text: string): void {
+    // Escape first to be safe.
+    let safe = escHtml(text);
+    // Replace inline ``code`` with <code>.
+    safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Replace **bold** and *italic*.
+    safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    safe = safe.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // Use innerHTML only after escaping and controlled replacements above.
+    target.innerHTML = safe;
+  }
 
   const lines = report.split(/\r?\n/);
   for (const line of lines) {
     if (/^# /.test(line)) {
-      const h2 = document.createElement('h3');
-      h2.style.cssText = 'margin:8px 0 4px;font-size:14px;color:var(--oc-fg);';
-      h2.textContent = line.replace(/^# /, '');
-      body.appendChild(h2);
+      closeList();
+      const h1 = document.createElement('h2');
+      h1.style.marginLeft = '0px';
+      appendInlineMarkdown(h1, line.replace(/^# /, ''));
+      container.appendChild(h1);
     } else if (/^## /.test(line)) {
-      const h3 = document.createElement('h4');
-      h3.style.cssText = 'margin:10px 0 4px;font-size:13px;color:var(--oc-muted);';
-      h3.textContent = line.replace(/^## /, '');
-      body.appendChild(h3);
+      closeList();
+      const h2 = document.createElement('h3');
+      appendInlineMarkdown(h2, line.replace(/^## /, ''));
+      container.appendChild(h2);
     } else if (/^### /.test(line)) {
-      const h4 = document.createElement('h5');
-      h4.style.cssText = 'margin:8px 0 3px;font-size:12px;color:var(--oc-muted);';
-      h4.textContent = line.replace(/^### /, '');
-      body.appendChild(h4);
-    } else if (/^- /.test(line)) {
+      closeList();
+      const h3 = document.createElement('h4');
+      appendInlineMarkdown(h3, line.replace(/^### /, ''));
+      container.appendChild(h3);
+    } else if (/^[-*] /.test(line)) {
+      closeList();
+      // Open an unordered list.
+      if (!listOpen) {
+        currentList = document.createElement('ul');
+        currentList.style.cssText = 'margin:4px 0; padding-left:18px';
+        listOpen = true;
+      }
       const li = document.createElement('li');
-      li.style.cssText = 'margin:4px 0;font-family:var(--oc-mono)';
-      li.textContent = line.replace(/^- /, '');
-      preEl.appendChild(li);
-    } else if (line === '') {
-      continue; // skip empty lines in pre block for layout.
+      appendInlineMarkdown(li, line.replace(/^[-*] /, ''));
+      currentList.appendChild(li);
+    } else if (line.trim() === '') {
+      closeList();
     } else {
+      closeList();
       const p = document.createElement('p');
-      p.style.cssText = 'margin:0 0 6px;white-space:pre-wrap';
-      p.textContent = line;
-      preEl.appendChild(p);
+      p.style.cssText = 'margin:0 0 6px; white-space:pre-wrap';
+      appendInlineMarkdown(p, line);
+      container.appendChild(p);
     }
   }
 
-  // Wrap the rendered elements in a scrollable container.
-  const scroller = document.createElement('div');
-  scroller.style.cssText = 'overflow-y:auto;max-height:calc(100% - 2px)';
-  scroller.appendChild(preEl);
-
-  // If report-pre already has children, use them.
-  if (preEl.children.length === 0) {
+  closeList();
+  
+  if (container.children.length === 0) {
     const empty = document.createElement('div');
     empty.style.cssText = 'padding:16px;color:var(--oc-muted);font-size:12px';
     empty.textContent = report || 'No graph report found.';
-    scroller.appendChild(empty);
+    container.appendChild(empty);
   }
-
-  body.appendChild(scroller);
 }
 
 function renderAnalysis(analysis: any): void {
@@ -476,6 +507,11 @@ function renderAnalysis(analysis: any): void {
 
 function esc(s: string): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Escape string for innerHTML then apply controlled inline markdown. */
+function escHtml(s: string): string {
+  return esc(s);
 }
 
 /** Apply the host theme tokens onto document root. */
