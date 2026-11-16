@@ -4,7 +4,7 @@
   .tabs { display: flex; background: color-mix(in srgb, var(--oc-fg) 3%, transparent); border-bottom:1px solid var(--oc-border); }
   .tab { flex:0 1 auto; padding:8px 14px; font-size:13px; color:var(--oc-muted); cursor:pointer; user-select:none; transition:background-color .12s ease, color .12s ease; }
   .tab:hover:not(.active) { background-color:color-mix(in srgb, var(--primary) 6%, transparent); color:var(--oc-fg); }
-  .tab.active { background-color: var(--primary) !important; color:var(--primary-text)!important; font-weight:600; }
+  .tab.active { background-color: color-mix(in srgb, var(--oc-fg) 8%, transparent) !important; color:var(--oc-fg)!important; font-weight:600; }
   .content { flex: 1; display: none; overflow: hidden; height: 0; }
   .content.active { display: flex; flex-direction: column; height: auto; overflow: hidden; }
   .section-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; color: var(--oc-muted); border-bottom: 1px solid var(--oc-border); }
