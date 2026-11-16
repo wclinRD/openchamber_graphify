@@ -26,8 +26,8 @@ const CSS = `
   .section-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; color: var(--oc-muted); border-bottom: 1px solid var(--oc-border); }
   .section-body { padding: 0; overflow-y: auto; flex: 1; }
   .graph-controls { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: color-mix(in srgb, var(--oc-fg) 3%, transparent); border-bottom: 1px solid var(--oc-border); flex-shrink:0; }
-  .graph-controls button { padding: 4px 8px; font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 8%, transparent); border: none; color: var(--oc-muted); cursor: pointer; }
-  .graph-controls button:hover { color: var(--oc-fg); background: color-mix(in srgb, var(--primary) 15%, transparent); }
+  .graph-controls button { padding: 4px 8px; font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 8%, transparent); border: 1px solid color-mix(in srgb, var(--oc-fg) 12%, transparent); color: var(--oc-muted); cursor: pointer; }
+  .graph-controls button:hover { color: var(--oc-fg); background: color-mix(in srgb, var(--primary) 15%, transparent); border-color: color-mix(in srgb, var(--primary) 40%, transparent); }
   .graph-controls input { width: 64px; padding: 3px 4px; font-family: var(--oc-mono); font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border: none; color: var(--oc-fg); }
   .section-body.graph-container { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
   #graph-canvas { width: 100%; height: auto; flex: 1; min-height: 0; }
@@ -201,7 +201,12 @@ async function drawGraph(data: GraphData): Promise<void> {
 
       const applyFit = (scale?: number) => {
         if (!network) return;
-        network.fit(scale !== undefined ? { scale } : {});
+        if (scale !== undefined) {
+          network.fit({ scale });
+        } else {
+          // vis-network fit without options fits all nodes to viewport
+          network.fit();
+        }
         const s = network.getScale();
         graphScale = Number.isFinite(s) ? s : (scale ?? graphScale);
       };
