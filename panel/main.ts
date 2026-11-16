@@ -21,8 +21,9 @@ const CSS = `
   .section-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; color: var(--oc-muted); border-bottom: 1px solid var(--oc-border); }
   .section-body { padding: 0; overflow-y: auto; flex: 1; }
   .graph-controls { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: color-mix(in srgb, var(--oc-fg) 3%, transparent); border-bottom: 1px solid var(--oc-border); flex-shrink:0; }
-  .graph-controls button { padding: 4px 8px; font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 8%, transparent); border: 1px solid color-mix(in srgb, var(--oc-fg) 12%, transparent); color: var(--oc-muted); cursor: pointer; }
-  .graph-controls button:hover { color: var(--oc-fg); background: color-mix(in srgb, var(--primary) 15%, transparent); border-color: color-mix(in srgb, var(--primary) 40%, transparent); }
+  .graph-controls button { padding: 4px 8px; font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 8%, transparent); border: 1px solid color-mix(in srgb, var(--oc-fg) 20%, transparent); color: var(--oc-muted); cursor: pointer; }
+  .graph-controls button:hover { color: var(--oc-fg); background: color-mix(in srgb, var(--primary) 25%, transparent); border-color: color-mix(in srgb, var(--primary) 60%, transparent); }
+  .graph-controls button:focus-visible { outline:2px solid var(--oc-focus); outline-offset:1px; border-color:var(--oc-primary); }
   .graph-retry-btn { padding:6px 12px;font-size:12px; border-radius:4px; background:var(--oc-error); color:#fff;border:none;cursor:pointer; margin-top:12px; }
   .graph-retry-btn:hover { background:color-mix(in srgb,var(--oc-error) 70%,black); }
   .graph-controls input { width: 64px; padding: 3px 4px; font-family: var(--oc-mono); font-size: 12px; border-radius: 4px; background: color-mix(in srgb, var(--oc-fg) 4%, transparent); border: none; color: var(--oc-fg); }
