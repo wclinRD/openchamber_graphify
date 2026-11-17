@@ -32,6 +32,10 @@ const CSS = `
   .graph-legend-group:hover { background-color: color-mix(in srgb, var(--primary) 8%, transparent); }
   .graph-legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
   .graph-legend-check { accent-color:var(--primary); margin-left:2px; }
+  .graph-chrome-toggle { width:20px;height:20px;font-size:11px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--oc-fg) 3%,transparent); border:1px solid color-mix(in srgb,var(--oc-fg)20%,transparent); border-radius:4px;color:var(--oc-muted);cursor:pointer; }
+  .graph-chrome-toggle:hover { background-color:color-mix(in srgb,var(--primary) 25%,transparent); border-color: color-mix(in srgb, var(--primary)60%, transparent);}
+  .graph-chrome { display:flex;flex-direction:column;width:100%; }
+  .graph-chrome-hidden{display:none !important;}
   .section-body.graph-container { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
   #graph-canvas { width: 100%; height: auto; flex: 1; min-height: 0; }
   .report-pre { border: none; box-sizing: border-box; font-size: 12px; line-height: 1.55; color: var(--oc-fg); white-space: pre-wrap; overflow-y: auto; padding: 10px; }
@@ -118,7 +122,50 @@ function createSection(id: string, title: string): HTMLElement {
 
   const head = document.createElement('div');
   head.classList.add('section-head', id + '-head');
-  head.textContent = title;
+
+  if (id === 'graph') {
+    head.style.display = 'flex';
+    head.style.alignItems = 'center';
+    head.style.justifyContent = 'space-between';
+
+    const titleEl = document.createElement('span');
+    titleEl.style.cssText = 'font-size:13px; color:var(--oc-muted)';
+    titleEl.textContent = title;
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.classList.add('graph-chrome-toggle');
+let expanded = false; // default collapsed
+try {
+      if (typeof sessionStorage !== 'undefined' && window.sessionStorage) expanded = sessionStorage.getItem('graphChromeVisible') !== 'false';
+    } catch {}
+
+    const refreshToggleState = () => {
+      toggleBtn.title = expanded ? 'Collapse legend and controls' : 'Expand legend and controls';
+      toggleBtn.textContent = expanded ? '▼' : '▲';
+    };
+    refreshToggleState();
+
+    toggleBtn.addEventListener('click', () => {
+      expanded = !expanded;
+      try { if (typeof sessionStorage !== 'undefined' && window.sessionStorage) sessionStorage.setItem('graphChromeVisible', expanded ? 'true' : 'false'); } catch {}
+      refreshToggleState();
+
+      const graphBody = root?.querySelector<HTMLElement>(`.section-body.graph-container`);
+      if (graphBody) {
+        const chromeEl = graphBody.querySelector<HTMLElement>('.graph-chrome');
+        if (chromeEl) chromeEl.classList.toggle('graph-chrome-hidden', !expanded);
+      }
+    });
+
+    head.appendChild(titleEl);
+    head.appendChild(toggleBtn);
+  } else {
+    const titleEl = document.createElement('span');
+    titleEl.textContent = title;
+    head.appendChild(titleEl);
+  }
+
   el.appendChild(head);
 
   const body = document.createElement('div');
@@ -165,6 +212,13 @@ async function drawGraph(data: GraphData): Promise<void> {
 
   body.replaceChildren();
 
+  let chromeWrapper: HTMLElement | null = null;
+let expanded = false; // default collapsed
+try { if (typeof sessionStorage !== 'undefined' && window.sessionStorage) expanded = sessionStorage.getItem('graphChromeVisible') !== 'false'; } catch {}
+
+chromeWrapper = document.createElement('div');
+chromeWrapper.classList.add('graph-chrome');
+if (!expanded) chromeWrapper.classList.add('graph-chrome-hidden');
   const controls = document.createElement('div');
   controls.classList.add('graph-controls');
 
@@ -197,7 +251,8 @@ async function drawGraph(data: GraphData): Promise<void> {
   controls.appendChild(inputZoom);
   makeButton('+', 'in');
 
-  body.appendChild(controls);
+  if (chromeWrapper) chromeWrapper.appendChild(controls);
+  body.appendChild(chromeWrapper!);
 
   const graphDiv = document.createElement('div');
   const id = 'graph-canvas';
@@ -338,8 +393,8 @@ async function drawGraph(data: GraphData): Promise<void> {
           checkInput.addEventListener('change', toggleGroup);
         }
 
-        if (graphDiv && graphDiv.parentNode === body) {
-          body.insertBefore(legendDiv, graphDiv);
+        if (chromeWrapper) {
+          chromeWrapper.appendChild(legendDiv);
         } else if (body && !body.contains(legendDiv)) {
           body.appendChild(legendDiv);
         }
